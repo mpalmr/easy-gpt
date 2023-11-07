@@ -1,0 +1,15 @@
+<mj-attributes>
+  <mj-text
+    font-weight="400"
+    font-size="14px"
+    color="#000000"
+    line-height="21px"
+  />
+
+  <mj-class
+    name="primary-heading"
+    font-size="30px"
+    line-height="56px"
+    font-weight="bold"
+  />
+</mj-attributes>
