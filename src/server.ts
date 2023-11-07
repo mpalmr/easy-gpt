@@ -34,7 +34,7 @@ export default function createServer(deps: ServerDeps) {
     },
   }));
 
-  server.use(router(deps));
+  server.use('/api', router(deps));
   server.use((req, res) => res.sendStatus(404));
   server.use(defaultErrorHandler(logger));
   return server;

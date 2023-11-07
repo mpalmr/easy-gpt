@@ -17,7 +17,7 @@ export async function up(knex: Knex) {
         .unique();
 
       table
-        .string('passwordHash', 86)
+        .text('passwordHash')
         .notNullable();
 
       table

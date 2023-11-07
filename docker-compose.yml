@@ -8,5 +8,14 @@ services:
       - 5432:5432/tcp
     volumes:
       - easy_gpt_psql_data:/var/lib/postgresql/data
+  mailhog:
+    container_name: easy_gpt_mailhog
+    image: mailhog/mailhog
+    logging:
+      driver: 'none'
+    ports:
+      - 1025:1025
+      - 8025:8025
+      - 465:465
 volumes:
   easy_gpt_psql_data:

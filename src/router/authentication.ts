@@ -21,6 +21,7 @@ const authenticationRoutes: ApplyRoutes = function authenticationRoutes(router, 
         .where('users.email', req.body.email)
         .whereNotNull('userVerifications.verifiedAt')
         .select('users.id', 'users.passwordHash')
+        .orderBy('createdAt', 'desc')
         .first();
 
       if (!!user && await argon.verify(user.passwordHash, req.body.password)) {

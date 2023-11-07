@@ -3,11 +3,17 @@ import argon from 'argon2';
 import { DateTime } from 'luxon';
 import type { ApplyRoutes } from '.';
 
-const registerRoutes: ApplyRoutes = function registerRoutes(router, {
-  email,
-  validator,
-  knex,
-}) {
+const registerRoutes: ApplyRoutes = function registerRoutes(router, { email, validator, knex }) {
+  async function dispatchVerificationToken(userId: string) {
+    const token = await knex('userVerifications')
+      .insert({ userId })
+      .returning('id')
+      .then(([{ id }]) => id);
+
+    // await email.verify({ verifyUrl: `http://localhost:8080/verify-email/${verificationToken}` });
+    return token;
+  }
+
   router.post(
     '/users',
 
@@ -29,15 +35,33 @@ const registerRoutes: ApplyRoutes = function registerRoutes(router, {
           .returning('id')
           .then(([{ id }]) => id);
 
-        const verificationToken = await trx('userVerifications')
-          .insert({ userId })
-          .returning('id')
-          .then(([{ id }]) => id);
-
-        await email.verify({ verifyUrl: `http://localhost:8080/verify-email/${verificationToken}` });
+        await dispatchVerificationToken(userId);
       });
 
       res.sendStatus(201);
+    },
+  );
+
+  router.post(
+    '/users/:userId/resend-verification',
+
+    validator.params(Joi.object({
+      userId: Joi.string().uuid().required(),
+    })
+      .required()),
+
+    async (req, res) => {
+      const isEligible = await knex('userVerifications')
+        .where('userId', req.params.userId)
+        .whereNotNull('verifiedAt')
+        .first()
+        .then(Boolean);
+
+      if (!isEligible) res.sendStatus(403);
+      else {
+        await dispatchVerificationToken(req.params.userId);
+        res.sendStatus(200);
+      }
     },
   );
 
@@ -54,6 +78,7 @@ const registerRoutes: ApplyRoutes = function registerRoutes(router, {
         .where('id', req.params.verificationToken)
         .whereNull('verifiedAt')
         .select('userId', 'createdAt')
+        .orderBy('createdAt', 'desc')
         .first();
 
       if (!tokenRecord) res.sendStatus(404);
