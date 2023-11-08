@@ -3,7 +3,7 @@ import Router from 'express-promise-router';
 import { createValidator, ExpressJoiInstance } from 'express-joi-validation';
 import type { ServerDeps } from '../server';
 import authenticationRoutes from './authentication';
-import registerRoutes from './register';
+import applyUserRoutes from './user';
 
 export interface RouteDeps extends ServerDeps {
   validator: ExpressJoiInstance;
@@ -23,7 +23,7 @@ export default function createRouter(serverDeps: ServerDeps) {
   // Apply routes
   [
     authenticationRoutes,
-    registerRoutes,
+    applyUserRoutes,
   ]
     .forEach((applyRoutes) => {
       applyRoutes(router, deps);

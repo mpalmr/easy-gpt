@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "main": "./dist/index.js",
   "author": "Matthew Palmer <mspalmer91@gmail.com>",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "scripts": {
     "dev": "NODE_ENV=development nodemon --exec \"node -r ts-node/register --inspect\" ./src/index.ts",
     "test": "yarn typecheck && yarn lint",

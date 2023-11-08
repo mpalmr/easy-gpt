@@ -1,5 +1,6 @@
 import Joi from 'joi';
 import argon from 'argon2';
+import { authenticated } from '../middleware';
 import type { ApplyRoutes } from '.';
 
 const authenticationRoutes: ApplyRoutes = function authenticationRoutes(router, {
@@ -8,6 +9,7 @@ const authenticationRoutes: ApplyRoutes = function authenticationRoutes(router, 
 }) {
   router.post(
     '/login',
+    authenticated(true),
 
     validator.body(Joi.object({
       email: Joi.string().trim().required(),
@@ -39,6 +41,17 @@ const authenticationRoutes: ApplyRoutes = function authenticationRoutes(router, 
       } else res.sendStatus(401);
     },
   );
+
+  router.post('/logout', authenticated(), async (req, res) => {
+    await new Promise<void>((resolve, reject) => {
+      req.session.destroy((err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+
+    res.sendStatus(200);
+  });
 };
 
 export default authenticationRoutes;

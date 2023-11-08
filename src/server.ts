@@ -6,13 +6,13 @@ import type { Knex } from 'knex';
 import type { Logger } from 'winston';
 import router from './router';
 import { defaultErrorHandler } from './middleware';
-import type createEmail from './email';
+import type { Emails } from './email';
 import { HTTP_SESSION_SECRET, NODE_ENV } from './env';
 
 export interface ServerDeps {
   knex: Knex;
   logger: Logger;
-  email: Awaited<ReturnType<typeof createEmail>>;
+  email: Emails;
 }
 
 export default function createServer(deps: ServerDeps) {
