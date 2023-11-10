@@ -6,7 +6,6 @@ import type { ApplyRoutes } from '.';
 const authenticationRoutes: ApplyRoutes = function authenticationRoutes(router, { knex }) {
   router.post(
     '/login',
-    authenticated(true),
 
     validate('body', Joi.object({
       email: Joi.string().trim().required(),
@@ -16,14 +15,12 @@ const authenticationRoutes: ApplyRoutes = function authenticationRoutes(router, 
 
     async (req, res) => {
       const user = await knex('users')
-        .innerJoin('userVerifications', 'userVerifications.userId', 'users.id')
-        .where('users.email', req.body.email)
-        .whereNotNull('userVerifications.verifiedAt')
-        .select('users.id', 'users.passwordHash')
-        .orderBy('createdAt', 'desc')
+        .where('email', req.body.email)
         .first();
 
-      if (!!user && await argon.verify(user.passwordHash, req.body.password)) {
+      if (!(user && await argon.verify(user.passwordHash, req.body.password))) {
+        res.sendStatus(401);
+      } else {
         Object.assign(req.session, {
           user: {
             id: user.id,
@@ -32,10 +29,11 @@ const authenticationRoutes: ApplyRoutes = function authenticationRoutes(router, 
         });
 
         res.json({
-          userId: user.id,
+          id: user.id,
           email: user.email,
+          createdAt: user.createdAt,
         });
-      } else res.sendStatus(401);
+      }
     },
   );
 

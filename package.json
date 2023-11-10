@@ -12,6 +12,7 @@
     "lint": "eslint --ext ts,js .",
     "jest:unit": "NODE_ENV=test jest",
     "jest:integration": "NODE_ENV=test jest -ic jest.integration.config.ts",
+    "jest:integration:inspect": "NODE_ENV=test node --inspect-brk ./node_modules/.bin/jest -ic jest.integration.config.ts",
     "db:migrate": "knex migrate:latest",
     "db:migrate:make": "knex migrate:make -x ts",
     "db:reset": "knex migrate:rollback --all && yarn db:migrate"

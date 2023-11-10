@@ -5,11 +5,10 @@ import createTestServices, { TestServices } from '../../../test/services';
 let testServices: TestServices;
 beforeAll(async () => {
   testServices = await createTestServices();
+});
 
-  await testServices.knex('users').insert({
-    email: 'radman@example.com',
-    passwordHash: await argon.hash('P@ssw0rd'),
-  });
+afterAll(async () => {
+  await testServices.knex.destroy();
 });
 
 describe('Validation', () => {
@@ -42,14 +41,18 @@ describe('Validation', () => {
   });
 });
 
-test('can log in', async () => expect(
-  request(testServices.server)
+test('can log in', async () => {
+  await testServices.knex('users').insert({
+    email: 'radman@example.com',
+    passwordHash: await argon.hash('P@ssw0rd'),
+  });
+
+  await request(testServices.server)
     .post('/api/login')
     .expect(200)
     .send({
       email: 'radman@example.com',
       password: 'P@ssw0rd',
     })
-    .then((res) => res.body),
-)
-  .resolves.toBeUndefined());
+    .then((res) => res.body);
+});
