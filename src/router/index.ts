@@ -3,7 +3,9 @@ import Router from 'express-promise-router';
 import type { ServerDeps } from '../server';
 import authenticationRoutes from './authentication';
 import applyUserRoutes from './user';
-import conversationRoutes from './conversation/conversation';
+
+import conversationRoutes from './conversation';
+import conversationMessageRoutes from './conversation/messages';
 
 export type RouteDeps = ServerDeps;
 
@@ -17,6 +19,7 @@ export default function createRouter(deps: ServerDeps) {
     authenticationRoutes,
     applyUserRoutes,
     conversationRoutes,
+    conversationMessageRoutes,
   ]
     .forEach((applyRoutes) => {
       applyRoutes(router, deps as RouteDeps);
