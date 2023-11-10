@@ -76,29 +76,29 @@ const conversationRoutes: ApplyRoutes = function conversationRoutes(router, { kn
       .required()),
 
     async (req, res) => {
-      const ownerUserId = await knex('conversations')
+      const ownerUserIdRecord = await knex('conversations')
         .where('id', req.params.conversationId)
         .select('userId')
-        .first()
-        .then((record) => record?.userId);
+        .first();
 
-      if (ownerUserId !== req.session.userId) res.sendStatus(403);
+      if (!ownerUserIdRecord) res.sendStatus(404);
+      else if (ownerUserIdRecord.userId !== req.session.userId) res.sendStatus(403);
       else {
-        const conversation = await knex.transaction(async (trx) => {
-          const updateSql = trx('conversations')
-            .where('id', req.params.conversationId);
+        res.json({
+          conversation: await knex.transaction(async (trx) => {
+            const updateSql = trx('conversations')
+              .where('id', req.params.conversationId)
+              .update('updatedAt', new Date());
 
-          if (req.body.label) updateSql.update('label', req.body.label);
-          await updateSql;
+            if (req.body.label) updateSql.update('label', req.body.label);
+            await updateSql;
 
-          return trx('conversations')
-            .select('id', 'label', 'createdAt')
-            .where('id', req.params.conversationId)
-            .first();
+            return trx('conversations')
+              .select('id', 'label', 'createdAt')
+              .where('id', req.params.conversationId)
+              .first();
+          }),
         });
-
-        if (!conversation) res.sendStatus(404);
-        else res.json({ conversation });
       }
     },
   );
