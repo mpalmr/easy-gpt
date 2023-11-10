@@ -48,7 +48,9 @@ const conversationRoutes: ApplyRoutes = function conversationRoutes(router, { kn
     authenticated(),
 
     validate('body', Joi.object({
-      label: Joi.string().trim(),
+      userId: Joi.string().trim().uuid().required(),
+      label: Joi.string().trim().required(),
+      temperature: Joi.number().positive(),
     })
       .required()),
 
@@ -57,8 +59,14 @@ const conversationRoutes: ApplyRoutes = function conversationRoutes(router, { kn
         .insert({
           userId: req.session.userId!,
           label: req.body.label,
+          temperature: req.body.temperature,
         })
-        .returning(['id', 'label', 'createdAt'])
+        .returning([
+          'id',
+          'label',
+          'temperature',
+          'createdAt',
+        ])
         .then(([a]) => a);
 
       res.status(201).json({ conversation });
@@ -119,7 +127,7 @@ const conversationRoutes: ApplyRoutes = function conversationRoutes(router, { kn
 
       if (!isOwner) res.sendStatus(403);
       else {
-        await baseSql.clone().del();
+        await baseSql.del();
         res.sendStatus(200);
       }
     },

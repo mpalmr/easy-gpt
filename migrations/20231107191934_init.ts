@@ -65,6 +65,12 @@ export async function up(knex: Knex) {
         .notNullable();
 
       table
+        .float('temperature')
+        .unsigned()
+        .notNullable()
+        .defaultTo(0.1);
+
+      table
         .timestamp('createdAt')
         .notNullable()
         .defaultTo(knex.fn.now());

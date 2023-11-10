@@ -21,6 +21,7 @@ declare module 'knex/types/tables' {
     readonly id: string;
     readonly userId: string;
     label: string;
+    temperature: number;
     readonly createdAt: Date;
   }
 
