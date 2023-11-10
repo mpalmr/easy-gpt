@@ -35,7 +35,11 @@ describe('User Routes', () => {
     const user = await testServices.knex('users')
       .where({ email: userData.email })
       .first();
+
+    // Ensure that 'user' is defined before proceeding
     expect(user).toBeDefined();
+    if (!user) throw new Error('User not found');
+
     expect(user.email).toBe(userData.email);
     expect(await argon.verify(user.passwordHash, userData.password)).toBe(true);
 
