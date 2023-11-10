@@ -3,7 +3,7 @@ import Router from 'express-promise-router';
 import type { ServerDeps } from '../server';
 import authenticationRoutes from './authentication';
 import applyUserRoutes from './user';
-import conversationRoutes from './conversation';
+import conversationRoutes from './conversation/conversation';
 
 export type RouteDeps = ServerDeps;
 

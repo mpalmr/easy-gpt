@@ -34,24 +34,6 @@ const userRoutes: ApplyRoutes = function applyRoutes(router, { knex }) {
       res.sendStatus(201);
     },
   );
-
-  router.get(
-    '/user/email/unique',
-
-    validate('query', Joi.object({
-      email: Joi.string().trim().email().required(),
-    })
-      .required()),
-
-    async (req, res) => {
-      res.json({
-        isEmailUnique: await knex('users')
-          .where('email', req.query.email)
-          .first()
-          .then(Boolean),
-      });
-    },
-  );
 };
 
 export default userRoutes;
