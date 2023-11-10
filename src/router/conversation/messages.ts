@@ -12,8 +12,13 @@ const conversationMessageRoutes: ApplyRoutes = function conversationMessageRoute
     .required());
 
   router.post(
-    '/conversations/messages',
+    '/conversations/:conversationId/messages',
     authenticated(),
+
+    validate('params', Joi.object({
+      conversationId: Joi.string().uuid().required(),
+    })
+      .required()),
 
     validate('body', Joi.object({
       conversationId: Joi.string().uuid().required(),
