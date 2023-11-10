@@ -14,22 +14,13 @@ const userRoutes: ApplyRoutes = function applyRoutes(router, { knex }) {
       .required()),
 
     async (req, res) => {
-      await knex.transaction(async (trx) => {
-        const userId = await trx('users')
-          .insert({
-            email: req.body.email,
-            passwordHash: await argon.hash(req.body.password),
-          })
-          .returning('id')
-          .then(([{ id }]) => id);
-
-        await knex('userVerifications')
-          .insert({ userId })
-          .returning('id')
-          .then(([{ id }]) => id);
-
-        // await email.verify({ verifyUrl: `http://localhost:8080/verify-email/${verificationToken}` });
-      });
+      await knex('users')
+        .insert({
+          email: req.body.email,
+          passwordHash: await argon.hash(req.body.password),
+        })
+        .returning('id')
+        .then(([{ id }]) => id);
 
       res.sendStatus(201);
     },
