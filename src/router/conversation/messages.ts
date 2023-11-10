@@ -6,6 +6,11 @@ const conversationMessageRoutes: ApplyRoutes = function conversationMessageRoute
   router,
   { knex },
 ) {
+  const validateMessageIdParam = validate('params', Joi.object({
+    messageId: Joi.string().uuid().required(),
+  })
+    .required());
+
   router.post(
     '/conversations/messages',
     authenticated(),
@@ -40,11 +45,8 @@ const conversationMessageRoutes: ApplyRoutes = function conversationMessageRoute
 
   router.patch(
     '/conversations/messages/:messageId',
-
-    validate('params', Joi.object({
-      messageId: Joi.string().uuid().required(),
-    })
-      .required()),
+    authenticated(),
+    validateMessageIdParam,
 
     validate('body', Joi.object({
       role: Joi.string().valid('SYSTEM', 'USER', 'ASSISTANT'),
@@ -82,6 +84,29 @@ const conversationMessageRoutes: ApplyRoutes = function conversationMessageRoute
               .first();
           }),
         });
+      }
+    },
+  );
+
+  router.delete(
+    '/conversations/messages/:messageId',
+    authenticated(),
+    validateMessageIdParam,
+
+    async (req, res) => {
+      const baseSql = knex('conversationMessages')
+        .where('conversationMessages.id', req.params.messageId);
+
+      const record = await baseSql.clone()
+        .innerJoin('conversations', 'conversations.id', 'conversationMessages.conversationId')
+        .select('conversations.userId')
+        .first();
+
+      if (!record) res.sendStatus(404);
+      else if (record.userId !== req.session.userId) res.sendStatus(403);
+      else {
+        await baseSql.del();
+        res.sendStatus(200);
       }
     },
   );
