@@ -50,7 +50,7 @@ test('invalid input', () => {
 
   expect(mockNext).not.toHaveBeenCalled();
   expect(mockRes.status).toHaveBeenCalledWith(400);
-  expect(mockResJson).toHaveBeenCalledTimes(1);
-  expect(mockResJson.mock.calls.at(0)?.at(0)?.error.message)
-    .toBe('"email" must be a valid email');
+  expect(mockResJson).toHaveBeenCalledWith({
+    errors: { email: '"email" must be a valid email' },
+  });
 });
