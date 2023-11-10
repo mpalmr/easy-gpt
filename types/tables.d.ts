@@ -21,6 +21,18 @@ declare module 'knex/types/tables' {
     readonly id: string;
     readonly userId: string;
     label: string;
+    temperature: number;
+    readonly createdAt: Date;
+  }
+
+  type ConversationMessageRole = 'SYSTEM' | 'USER' | 'ASSISTANT';
+
+  interface ConversationMessagesTable {
+    readonly id: string;
+    readonly conversationId: string;
+    readonly role: ConversationMessageRole;
+    content: string;
+    updatedAt?: Date;
     readonly createdAt: Date;
   }
 
@@ -28,19 +40,25 @@ declare module 'knex/types/tables' {
     users: Knex.CompositeTableType<
     UsersTable,
     WriteRecord<UsersTable>,
-    Omit<WriteRecord<UsersTable, 'email'>>
+    Omit<WriteRecord<UsersTable, 'email'>>,
     >;
 
     userVerifications: Knex.CompositeTableType<
     UserVerificationsTable,
     WriteRecord<UserVerificationsTable>,
-    Omit<WriteRecord<UserVerificationsTable>, 'userId'>
+    Omit<WriteRecord<UserVerificationsTable>, 'userId'>,
     >;
 
     conversations: Knex.CompositeTableType<
     ConversationsTable,
     WriteRecord<ConversationsTable>,
-    Omit<WriteRecord<ConversationsTable>, 'userId'>
+    Omit<WriteRecord<ConversationsTable>, 'userId'>,
+    >;
+
+    conversationMessages: Knex.CompositeTableType<
+    ConversationMessagesTable,
+    Omit<WriteRecord<ConversationMessagesTable>, 'updatedAt'>,
+    Omit<WriteRecord<ConversationMessagesTable>, 'conversationId' | 'role'>,
     >;
   }
 }

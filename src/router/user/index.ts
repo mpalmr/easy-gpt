@@ -1,15 +1,39 @@
+import Joi from 'joi';
+import argon from 'argon2';
 import type { ApplyRoutes } from '..';
-import userRoutes from './user';
-import verificationRoutes from './verification';
+import { validate } from '../../middleware';
 
-const applyUserRoutes: ApplyRoutes = function applyUserRoutes(router, deps) {
-  [
-    userRoutes,
-    verificationRoutes,
-  ]
-    .forEach((applyRoutes) => {
-      applyRoutes(router, deps);
-    });
+const userRoutes: ApplyRoutes = function applyRoutes(router, { knex }) {
+  router.post(
+    '/users',
+
+    validate('body', Joi.object({
+      email: Joi.string().trim().email().required(),
+      password: Joi.string().min(6).required(),
+    })
+      .required()),
+
+    async (req, res) => {
+      await knex.transaction(async (trx) => {
+        const userId = await trx('users')
+          .insert({
+            email: req.body.email,
+            passwordHash: await argon.hash(req.body.password),
+          })
+          .returning('id')
+          .then(([{ id }]) => id);
+
+        await knex('userVerifications')
+          .insert({ userId })
+          .returning('id')
+          .then(([{ id }]) => id);
+
+        // await email.verify({ verifyUrl: `http://localhost:8080/verify-email/${verificationToken}` });
+      });
+
+      res.sendStatus(201);
+    },
+  );
 };
 
-export default applyUserRoutes;
+export default userRoutes;
