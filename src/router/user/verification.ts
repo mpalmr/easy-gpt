@@ -1,17 +1,14 @@
 import Joi from 'joi';
 import { DateTime } from 'luxon';
-import { authenticated } from '../../middleware';
+import { validate, authenticated } from '../../middleware';
 import type { ApplyRoutes } from '..';
 
-const userVerificationRoutes: ApplyRoutes = function userVerificationRoutes(router, {
-  knex,
-  validator,
-}) {
+const userVerificationRoutes: ApplyRoutes = function userVerificationRoutes(router, { knex }) {
   router.post(
     '/users/verify/:token',
     authenticated(true),
 
-    validator.params(Joi.object({
+    validate('params', Joi.object({
       token: Joi.string().required(),
     })
       .required()),
@@ -41,7 +38,7 @@ const userVerificationRoutes: ApplyRoutes = function userVerificationRoutes(rout
     '/users/verify/resend',
     authenticated(true),
 
-    validator.params(Joi.object({
+    validate('params', Joi.object({
       email: Joi.string().trim().email().required(),
     })
       .required()),

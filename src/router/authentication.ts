@@ -1,17 +1,14 @@
 import Joi from 'joi';
 import argon from 'argon2';
-import { authenticated } from '../middleware';
+import { validate, authenticated } from '../middleware';
 import type { ApplyRoutes } from '.';
 
-const authenticationRoutes: ApplyRoutes = function authenticationRoutes(router, {
-  validator,
-  knex,
-}) {
+const authenticationRoutes: ApplyRoutes = function authenticationRoutes(router, { knex }) {
   router.post(
     '/login',
     authenticated(true),
 
-    validator.body(Joi.object({
+    validate('body', Joi.object({
       email: Joi.string().trim().required(),
       password: Joi.string().required(),
     })

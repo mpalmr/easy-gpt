@@ -7,7 +7,6 @@ declare module 'knex/types/tables' {
     readonly id: string;
     readonly email: string;
     passwordHash: string;
-    openaiApiKey: string;
     readonly createdAt: Date;
   }
 
@@ -15,6 +14,13 @@ declare module 'knex/types/tables' {
     readonly id: string;
     readonly userId: string;
     verifiedAt?: Date;
+    readonly createdAt: Date;
+  }
+
+  interface ConversationsTable {
+    readonly id: string;
+    readonly userId: string;
+    label: string;
     readonly createdAt: Date;
   }
 
@@ -29,6 +35,12 @@ declare module 'knex/types/tables' {
     UserVerificationsTable,
     WriteRecord<UserVerificationsTable>,
     Omit<WriteRecord<UserVerificationsTable>, 'userId'>
+    >;
+
+    conversations: Knex.CompositeTableType<
+    ConversationsTable,
+    WriteRecord<ConversationsTable>,
+    Omit<WriteRecord<ConversationsTable>, 'userId'>
     >;
   }
 }

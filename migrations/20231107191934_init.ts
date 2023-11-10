@@ -21,10 +21,6 @@ export async function up(knex: Knex) {
         .notNullable();
 
       table
-        .text('openaiApiKey')
-        .notNullable();
-
-      table
         .timestamp('createdAt')
         .notNullable()
         .defaultTo(knex.fn.now());
@@ -49,11 +45,35 @@ export async function up(knex: Knex) {
         .timestamp('createdAt')
         .notNullable()
         .defaultTo(knex.fn.now());
+    })
+    .createTable('conversations', (table) => {
+      table
+        .uuid('id')
+        .notNullable()
+        .defaultTo(knex.raw('uuid_generate_v4()'))
+        .primary();
+
+      table
+        .uuid('userId')
+        .notNullable()
+        .references('id')
+        .inTable('users')
+        .onDelete('CASCADE');
+
+      table
+        .text('label')
+        .notNullable();
+
+      table
+        .timestamp('createdAt')
+        .notNullable()
+        .defaultTo(knex.fn.now());
     });
 }
 
 export async function down(knex: Knex) {
   await knex.schema
+    .dropTableIfExists('conversations')
     .dropTableIfExists('userVerifications')
     .dropTableIfExists('users');
 
