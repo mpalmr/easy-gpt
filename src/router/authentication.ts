@@ -22,10 +22,7 @@ const authenticationRoutes: ApplyRoutes = function authenticationRoutes(router, 
         res.sendStatus(401);
       } else {
         Object.assign(req.session, {
-          user: {
-            id: user.id,
-            email: user.email,
-          },
+          userId: user.id,
         });
 
         res.json({

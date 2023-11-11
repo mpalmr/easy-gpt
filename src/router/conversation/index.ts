@@ -14,14 +14,14 @@ const conversationRoutes: ApplyRoutes = function conversationRoutes(router, { kn
       .where('userId', req.session.userId)
       .orderBy('createdAt', 'desc');
 
-    if (!conversations.length) res.sendStatus(404);
-    else res.json({ conversations });
+    res.json({ conversations });
   });
 
   router.get(
     '/conversations/:conversationId',
     authenticated(),
     conversationIdParamsValidator,
+
     async (req, res) => {
       const conversation = await knex.raw(`
         SELECT
@@ -48,26 +48,46 @@ const conversationRoutes: ApplyRoutes = function conversationRoutes(router, { kn
     authenticated(),
 
     validate('body', Joi.object({
-      userId: Joi.string().trim().uuid().required(),
       label: Joi.string().trim().required(),
       temperature: Joi.number().positive(),
+      message: Joi.string().trim().required(),
     })
       .required()),
 
     async (req, res) => {
-      const conversation = await knex('conversations')
-        .insert({
-          userId: req.session.userId!,
-          label: req.body.label,
-          temperature: req.body.temperature,
-        })
-        .returning([
-          'id',
-          'label',
-          'temperature',
-          'createdAt',
-        ])
-        .then(([a]) => a);
+      const conversation = await knex.transaction(async (trx) => {
+        const [conversationRecord] = await trx('conversations')
+          .insert({
+            userId: req.session.userId!,
+            label: req.body.label,
+            temperature: req.body.temperature,
+          })
+          .returning([
+            'id',
+            'label',
+            'temperature',
+            'createdAt',
+          ]);
+
+        const [message] = await trx('conversationMessages')
+          .insert({
+            conversationId: conversationRecord.id,
+            role: 'SYSTEM',
+            content: req.body.message,
+          })
+          .returning([
+            'id',
+            'role',
+            'content',
+            'updatedAt',
+            'createdAt',
+          ]);
+
+        return {
+          ...conversationRecord,
+          messages: [message],
+        };
+      });
 
       res.status(201).json({ conversation });
     },
