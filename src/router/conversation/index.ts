@@ -14,32 +14,30 @@ const conversationRoutes: ApplyRoutes = function conversationRoutes(router, { kn
       .where('userId', req.session.userId)
       .orderBy('createdAt', 'desc');
 
-    if (!conversations.length) res.sendStatus(404);
-    else res.json({ conversations });
+    res.json({ conversations });
   });
 
   router.get(
     '/conversations/:conversationId',
     authenticated(),
     conversationIdParamsValidator,
-    async (req, res) => {
-      const conversation = await knex.raw(`
-        SELECT
-          id,
-          label,
-          created_at,
-          (
-            SELECT json_agg(conversation_messages.* ORDER BY created_at DESC)
-            FROM conversation_messages
-            WHERE conversations.id = conversation_messages.conversation_id
-          ) AS messages
-        FROM conversations
-        WHERE id = ?
-        ORDER BY created_at DESC
-      `, [req.params.conversationId]);
 
-      if (!conversation) res.sendStatus(404);
-      else res.json({ conversation });
+    async (req, res) => {
+      const conversation = await Promise.all([
+        knex('conversations')
+          .select('id', 'label', 'createdAt')
+          .where('id', req.params.conversationId)
+          .first(),
+
+        knex('conversationMessages')
+          .select('id', 'role', 'content', 'updatedAt', 'createdAt')
+          .where('conversationId', req.params.conversationId)
+          .orderBy('createdAt'),
+      ])
+        .then(([record, messages]) => ({ ...record, messages }));
+
+      if (!conversation.id) res.sendStatus(404);
+      else res.json(conversation);
     },
   );
 
@@ -48,26 +46,46 @@ const conversationRoutes: ApplyRoutes = function conversationRoutes(router, { kn
     authenticated(),
 
     validate('body', Joi.object({
-      userId: Joi.string().trim().uuid().required(),
       label: Joi.string().trim().required(),
       temperature: Joi.number().positive(),
+      message: Joi.string().trim().required(),
     })
       .required()),
 
     async (req, res) => {
-      const conversation = await knex('conversations')
-        .insert({
-          userId: req.session.userId!,
-          label: req.body.label,
-          temperature: req.body.temperature,
-        })
-        .returning([
-          'id',
-          'label',
-          'temperature',
-          'createdAt',
-        ])
-        .then(([a]) => a);
+      const conversation = await knex.transaction(async (trx) => {
+        const [conversationRecord] = await trx('conversations')
+          .insert({
+            userId: req.session.userId!,
+            label: req.body.label,
+            temperature: req.body.temperature,
+          })
+          .returning([
+            'id',
+            'label',
+            'temperature',
+            'createdAt',
+          ]);
+
+        const [message] = await trx('conversationMessages')
+          .insert({
+            conversationId: conversationRecord.id,
+            role: 'SYSTEM',
+            content: req.body.message,
+          })
+          .returning([
+            'id',
+            'role',
+            'content',
+            'updatedAt',
+            'createdAt',
+          ]);
+
+        return {
+          ...conversationRecord,
+          messages: [message],
+        };
+      });
 
       res.status(201).json({ conversation });
     },
@@ -92,21 +110,19 @@ const conversationRoutes: ApplyRoutes = function conversationRoutes(router, { kn
       if (!ownerUserIdRecord) res.sendStatus(404);
       else if (ownerUserIdRecord.userId !== req.session.userId) res.sendStatus(403);
       else {
-        res.json({
-          conversation: await knex.transaction(async (trx) => {
-            const updateSql = trx('conversations')
-              .where('id', req.params.conversationId)
-              .update('updatedAt', new Date());
+        res.json(await knex.transaction(async (trx) => {
+          const updateSql = trx('conversations')
+            .where('id', req.params.conversationId)
+            .update('updatedAt', new Date());
 
-            if (req.body.label) updateSql.update('label', req.body.label);
-            await updateSql;
+          if (req.body.label) updateSql.update('label', req.body.label);
+          await updateSql;
 
-            return trx('conversations')
-              .select('id', 'label', 'createdAt')
-              .where('id', req.params.conversationId)
-              .first();
-          }),
-        });
+          return trx('conversations')
+            .select('id', 'label', 'createdAt')
+            .where('id', req.params.conversationId)
+            .first();
+        }));
       }
     },
   );

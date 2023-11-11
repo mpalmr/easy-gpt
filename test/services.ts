@@ -4,8 +4,6 @@ import createLogger from '../src/logger';
 import createEmail from '../src/email';
 import createServer from '../src/server';
 
-jest.mock('../src/logger');
-
 export default async function createTestServer() {
   const logger = createLogger();
   const email = await createEmail(logger);
