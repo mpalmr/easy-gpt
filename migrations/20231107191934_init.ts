@@ -65,6 +65,11 @@ export async function up(knex: Knex) {
         .notNullable();
 
       table
+        .text('systemPrompt')
+        .notNullable()
+        .defaultTo('You are an oracle');
+
+      table
         .float('temperature')
         .unsigned()
         .notNullable()
@@ -90,18 +95,11 @@ export async function up(knex: Knex) {
         .onDelete('CASCADE');
 
       table
-        .enum('role', [
-          'SYSTEM',
-          'USER',
-          'ASSISTANT',
-        ], {
-          useNative: true,
-          enumName: 'conversation_message_role',
-        })
+        .text('prompt')
         .notNullable();
 
       table
-        .text('content')
+        .text('response')
         .notNullable();
 
       table.timestamp('updatedAt');

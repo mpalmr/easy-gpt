@@ -21,17 +21,16 @@ declare module 'knex/types/tables' {
     readonly id: string;
     readonly userId: string;
     label: string;
+    systemPrompt: string
     temperature: number;
     readonly createdAt: Date;
   }
 
-  type ConversationMessageRole = 'SYSTEM' | 'USER' | 'ASSISTANT';
-
   interface ConversationMessagesTable {
     readonly id: string;
     readonly conversationId: string;
-    readonly role: ConversationMessageRole;
-    content: string;
+    prompt: string;
+    response: string;
     updatedAt?: Date;
     readonly createdAt: Date;
   }

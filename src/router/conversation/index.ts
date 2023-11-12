@@ -10,7 +10,7 @@ const conversationRoutes: ApplyRoutes = function conversationRoutes(router, { kn
 
   router.get('/conversations', authenticated(), async (req, res) => {
     const conversations = await knex('conversations')
-      .select('id', 'label', 'createdAt')
+      .select('id', 'label', 'systemPrompt', 'createdAt')
       .where('userId', req.session.userId)
       .orderBy('createdAt', 'desc');
 
@@ -25,12 +25,12 @@ const conversationRoutes: ApplyRoutes = function conversationRoutes(router, { kn
     async (req, res) => {
       const conversation = await Promise.all([
         knex('conversations')
-          .select('id', 'label', 'createdAt')
+          .select('id', 'label', 'systemPrompt', 'createdAt')
           .where('id', req.params.conversationId)
           .first(),
 
         knex('conversationMessages')
-          .select('id', 'role', 'content', 'updatedAt', 'createdAt')
+          .select('id', 'prompt', 'response', 'updatedAt', 'createdAt')
           .where('conversationId', req.params.conversationId)
           .orderBy('createdAt'),
       ])
@@ -47,47 +47,28 @@ const conversationRoutes: ApplyRoutes = function conversationRoutes(router, { kn
 
     validate('body', Joi.object({
       label: Joi.string().trim().required(),
+      systemPrompt: Joi.string().trim().required(),
       temperature: Joi.number().positive(),
       message: Joi.string().trim().required(),
     })
       .required()),
 
     async (req, res) => {
-      const conversation = await knex.transaction(async (trx) => {
-        const [conversationRecord] = await trx('conversations')
-          .insert({
-            userId: req.session.userId!,
-            label: req.body.label,
-            temperature: req.body.temperature,
-          })
-          .returning([
-            'id',
-            'label',
-            'temperature',
-            'createdAt',
-          ]);
-
-        const [message] = await trx('conversationMessages')
-          .insert({
-            conversationId: conversationRecord.id,
-            role: 'SYSTEM',
-            content: req.body.message,
-          })
-          .returning([
-            'id',
-            'role',
-            'content',
-            'updatedAt',
-            'createdAt',
-          ]);
-
-        return {
-          ...conversationRecord,
-          messages: [message],
-        };
-      });
-
-      res.status(201).json({ conversation });
+      res.status(201).json(await knex('conversations')
+        .insert({
+          userId: req.session.userId!,
+          label: req.body.label,
+          systemPrompt: req.body.systemPrompt,
+          temperature: req.body.temperature,
+        })
+        .returning([
+          'id',
+          'label',
+          'systemPrompt',
+          'temperature',
+          'createdAt',
+        ])
+        .then(([a]) => a));
     },
   );
 
