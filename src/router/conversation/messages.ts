@@ -22,27 +22,25 @@ const conversationMessageRoutes: ApplyRoutes = function conversationMessageRoute
 
     validate('body', Joi.object({
       conversationId: Joi.string().uuid().required(),
-      role: Joi.string().valid('SYSTEM', 'USER', 'ASSISTANT').required(),
-      content: Joi.string().trim(),
+      prompt: Joi.string().trim().required(),
     })
       .required()),
 
     async (req, res) => {
-      const message = await knex('conversationMessages')
+      const [message] = await knex('conversationMessages')
         .insert({
           conversationId: req.params.conversationId,
-          role: req.body.role,
-          content: req.body.content,
+          prompt: req.body.prompt,
+          response: 'ayyy',
         })
         .returning([
           'id',
           'conversationId',
-          'role',
-          'content',
+          'prompt',
+          'response',
           'updatedAt',
           'createdAt',
-        ])
-        .then(([a]) => a);
+        ]);
 
       res.status(201).json({ message });
     },
@@ -54,8 +52,8 @@ const conversationMessageRoutes: ApplyRoutes = function conversationMessageRoute
     validateMessageIdParam,
 
     validate('body', Joi.object({
-      role: Joi.string().valid('SYSTEM', 'USER', 'ASSISTANT'),
-      content: Joi.string().trim(),
+      prompt: Joi.string().trim(),
+      response: Joi.string().trim(),
     })
       .required()),
 
@@ -79,12 +77,12 @@ const conversationMessageRoutes: ApplyRoutes = function conversationMessageRoute
               .where('id', req.params.messageId)
               .update('updatedAt', new Date());
 
-            if (req.body.role) updateSql.update('role', req.body.role);
-            if (req.body.content) updateSql.update('content', req.body.content);
+            if (req.body.prompt) updateSql.update('prompt', req.body.prompt);
+            if (req.body.response) updateSql.update('response', req.body.response);
             await updateSql;
 
             return trx('conversationMessages')
-              .select('id', 'label', 'createdAt')
+              .select('id', 'label', 'prompt', 'resposne', 'createdAt')
               .where('id', req.params.messageId)
               .first();
           }),
