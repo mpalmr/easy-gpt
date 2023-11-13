@@ -1,4 +1,5 @@
 import type { Knex } from 'knex';
+import { MODELS } from '../src/constants';
 
 export async function up(knex: Knex) {
   await knex.raw('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
@@ -65,6 +66,14 @@ export async function up(knex: Knex) {
         .notNullable();
 
       table
+        .enum('model', MODELS, {
+          useNative: true,
+          enumName: 'gpt_model_option',
+        })
+        .notNullable()
+        .defaultTo('gpt-3.5-turbo-16k-0613');
+
+      table
         .text('systemPrompt')
         .notNullable()
         .defaultTo('You are an oracle');
@@ -119,6 +128,7 @@ export async function down(knex: Knex) {
     .dropTableIfExists('userVerifications')
     .dropTableIfExists('users');
 
+  await knex.raw('DROP TYPE IF EXISTS gpt_model_option');
   await knex.raw('DROP TYPE IF EXISTS conversation_message_role');
   await knex.raw('DROP EXTENSION IF EXISTS "uuid-ossp"');
 }
