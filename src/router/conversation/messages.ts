@@ -74,15 +74,23 @@ const conversationMessageRoutes: ApplyRoutes = function conversationMessageRoute
         res.json({
           message: await knex.transaction(async (trx) => {
             const updateSql = trx('conversationMessages')
-              .where('id', req.params.messageId)
-              .update('updatedAt', new Date());
+              .where('id', req.params.messageId);
 
-            if (req.body.prompt) updateSql.update('prompt', req.body.prompt);
-            if (req.body.response) updateSql.update('response', req.body.response);
+            const now = new Date();
+            if (req.body.prompt) {
+              updateSql
+                .update('prompt', req.body.prompt)
+                .update('promptUpdatedAt', now);
+            }
+            if (req.body.response) {
+              updateSql
+                .update('response', req.body.response)
+                .update('responseUpdatedAt', now);
+            }
             await updateSql;
 
             return trx('conversationMessages')
-              .select('id', 'label', 'prompt', 'resposne', 'createdAt')
+              .select('id', 'label', 'prompt', 'response', 'createdAt')
               .where('id', req.params.messageId)
               .first();
           }),

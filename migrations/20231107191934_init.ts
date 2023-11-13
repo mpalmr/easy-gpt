@@ -102,7 +102,8 @@ export async function up(knex: Knex) {
         .text('response')
         .notNullable();
 
-      table.timestamp('updatedAt');
+      table.timestamp('promptUpdatedAt');
+      table.timestamp('responseUpdatedAt');
 
       table
         .timestamp('createdAt')

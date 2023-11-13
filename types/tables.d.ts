@@ -31,7 +31,8 @@ declare module 'knex/types/tables' {
     readonly conversationId: string;
     prompt: string;
     response: string;
-    updatedAt?: Date;
+    promptUpdatedAt?: Date;
+    responseUpdatedAt?: Date;
     readonly createdAt: Date;
   }
 

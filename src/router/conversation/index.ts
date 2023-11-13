@@ -10,7 +10,7 @@ const conversationRoutes: ApplyRoutes = function conversationRoutes(router, { kn
 
   router.get('/conversations', authenticated(), async (req, res) => {
     const conversations = await knex('conversations')
-      .select('id', 'label', 'systemPrompt', 'createdAt')
+      .select('id', 'label', 'systemPrompt', 'temperature', 'createdAt')
       .where('userId', req.session.userId)
       .orderBy('createdAt', 'desc');
 
@@ -48,8 +48,7 @@ const conversationRoutes: ApplyRoutes = function conversationRoutes(router, { kn
     validate('body', Joi.object({
       label: Joi.string().trim().required(),
       systemPrompt: Joi.string().trim().required(),
-      temperature: Joi.number().positive(),
-      message: Joi.string().trim().required(),
+      temperature: Joi.number().positive().max(2),
     })
       .required()),
 
@@ -79,6 +78,8 @@ const conversationRoutes: ApplyRoutes = function conversationRoutes(router, { kn
 
     validate('body', Joi.object({
       label: Joi.string().trim(),
+      systemPrompt: Joi.string().trim(),
+      temperature: Joi.number().positive().max(2),
     })
       .required()),
 
@@ -97,6 +98,8 @@ const conversationRoutes: ApplyRoutes = function conversationRoutes(router, { kn
             .update('updatedAt', new Date());
 
           if (req.body.label) updateSql.update('label', req.body.label);
+          if (req.body.systemPrompt) updateSql.update('systemPrompt', req.body.systemPrompt);
+          if (req.body.temperature) updateSql.update('temperature', req.body.temperature);
           await updateSql;
 
           return trx('conversations')
