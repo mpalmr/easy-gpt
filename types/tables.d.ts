@@ -1,13 +1,11 @@
+import type { User, Conversation, ConversationMessage } from '@easy-gpt/types';
 import type { Knex } from 'knex';
 
 type WriteRecord<T> = Omit<T, 'id' | 'createdAt'>;
 
 declare module 'knex/types/tables' {
-  interface UsersTable {
-    readonly id: string;
-    readonly email: string;
+  interface UsersTable extends User {
     passwordHash: string;
-    readonly createdAt: Date;
   }
 
   interface UserVerificationsTable {
@@ -17,23 +15,12 @@ declare module 'knex/types/tables' {
     readonly createdAt: Date;
   }
 
-  interface ConversationsTable {
-    readonly id: string;
+  interface ConversationsTable extends Omit<Conversation, 'messages'> {
     readonly userId: string;
-    label: string;
-    systemPrompt: string
-    temperature: number;
-    readonly createdAt: Date;
   }
 
-  interface ConversationMessagesTable {
-    readonly id: string;
+  interface ConversationMessagesTable extends ConversationMessage {
     readonly conversationId: string;
-    prompt: string;
-    response: string;
-    promptUpdatedAt?: Date;
-    responseUpdatedAt?: Date;
-    readonly createdAt: Date;
   }
 
   interface Tables {

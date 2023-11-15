@@ -1,6 +1,16 @@
 import Joi from 'joi';
 import type { ApplyRoutes } from '..';
 import { validate, authenticated } from '../../middleware';
+import { GPT_MODELS } from '@easy-gpt/types';
+
+const DEFAULT_SELECT_FIELDS = [
+  'id',
+  'label',
+  'model',
+  'systemPrompt',
+  'temperature',
+  'createdAt',
+];
 
 const conversationRoutes: ApplyRoutes = function conversationRoutes(router, { knex }) {
   const conversationIdParamsValidator = validate('params', Joi.object({
@@ -10,7 +20,7 @@ const conversationRoutes: ApplyRoutes = function conversationRoutes(router, { kn
 
   router.get('/conversations', authenticated(), async (req, res) => {
     const conversations = await knex('conversations')
-      .select('id', 'label', 'systemPrompt', 'temperature', 'createdAt')
+      .select(...DEFAULT_SELECT_FIELDS)
       .where('userId', req.session.userId)
       .orderBy('createdAt', 'desc');
 
@@ -25,12 +35,19 @@ const conversationRoutes: ApplyRoutes = function conversationRoutes(router, { kn
     async (req, res) => {
       const conversation = await Promise.all([
         knex('conversations')
-          .select('id', 'label', 'systemPrompt', 'createdAt')
+          .select(...DEFAULT_SELECT_FIELDS)
           .where('id', req.params.conversationId)
           .first(),
 
         knex('conversationMessages')
-          .select('id', 'prompt', 'response', 'updatedAt', 'createdAt')
+          .select(
+            'id',
+            'prompt',
+            'promptUpdatedAt',
+            'response',
+            'responseUpdatedAt',
+            'createdAt',
+          )
           .where('conversationId', req.params.conversationId)
           .orderBy('createdAt'),
       ])
@@ -47,6 +64,7 @@ const conversationRoutes: ApplyRoutes = function conversationRoutes(router, { kn
 
     validate('body', Joi.object({
       label: Joi.string().trim().required(),
+      model: Joi.string().required().valid(...GPT_MODELS),
       systemPrompt: Joi.string().trim().required(),
       temperature: Joi.number().positive().max(2),
     })
@@ -57,16 +75,11 @@ const conversationRoutes: ApplyRoutes = function conversationRoutes(router, { kn
         .insert({
           userId: req.session.userId!,
           label: req.body.label,
+          model: req.body.model,
           systemPrompt: req.body.systemPrompt,
           temperature: req.body.temperature,
         })
-        .returning([
-          'id',
-          'label',
-          'systemPrompt',
-          'temperature',
-          'createdAt',
-        ])
+        .returning(DEFAULT_SELECT_FIELDS)
         .then(([a]) => a));
     },
   );
@@ -78,6 +91,7 @@ const conversationRoutes: ApplyRoutes = function conversationRoutes(router, { kn
 
     validate('body', Joi.object({
       label: Joi.string().trim(),
+      model: Joi.string().valid(...DEFAULT_SELECT_FIELDS),
       systemPrompt: Joi.string().trim(),
       temperature: Joi.number().positive().max(2),
     })
@@ -98,12 +112,13 @@ const conversationRoutes: ApplyRoutes = function conversationRoutes(router, { kn
             .update('updatedAt', new Date());
 
           if (req.body.label) updateSql.update('label', req.body.label);
+          if (req.body.model) updateSql.update('model', req.body.model);
           if (req.body.systemPrompt) updateSql.update('systemPrompt', req.body.systemPrompt);
           if (req.body.temperature) updateSql.update('temperature', req.body.temperature);
           await updateSql;
 
           return trx('conversations')
-            .select('id', 'label', 'createdAt')
+            .select(...DEFAULT_SELECT_FIELDS)
             .where('id', req.params.conversationId)
             .first();
         }));

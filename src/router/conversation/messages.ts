@@ -2,6 +2,16 @@ import Joi from 'joi';
 import { validate, authenticated } from '../../middleware';
 import type { ApplyRoutes } from '..';
 
+const DEFAULT_SELECT_FIELDS = [
+  'id',
+  'conversationId',
+  'prompt',
+  'promptUpdatedAt',
+  'response',
+  'responseUpdatedAt',
+  'createdAt',
+];
+
 const conversationMessageRoutes: ApplyRoutes = function conversationMessageRoutes(
   router,
   { knex },
@@ -33,14 +43,7 @@ const conversationMessageRoutes: ApplyRoutes = function conversationMessageRoute
           prompt: req.body.prompt,
           response: 'ayyy',
         })
-        .returning([
-          'id',
-          'conversationId',
-          'prompt',
-          'response',
-          'updatedAt',
-          'createdAt',
-        ]);
+        .returning(DEFAULT_SELECT_FIELDS);
 
       res.status(201).json({ message });
     },
@@ -90,7 +93,7 @@ const conversationMessageRoutes: ApplyRoutes = function conversationMessageRoute
             await updateSql;
 
             return trx('conversationMessages')
-              .select('id', 'label', 'prompt', 'response', 'createdAt')
+              .select(...DEFAULT_SELECT_FIELDS)
               .where('id', req.params.messageId)
               .first();
           }),
